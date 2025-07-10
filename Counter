@@ -1,0 +1,64 @@
+//MOD 16 UP/DOWN COUNTER DESIGN
+
+module up_down_counter_mod_16(input clk,rst,mod,en,output reg [3:0]count);
+  always@(posedge clk,posedge rst)begin
+    if(en==1)begin
+      if(mod==1)begin //up counter
+      if(rst)count<=4'b0000;
+        else begin
+          if(count==15)count<=4'b0;
+          else count<=count+4'b1;
+        end
+    end
+      else if(mod==0) begin //down counter
+      if(rst)count<=4'b1111;
+        else begin
+          if(count==0)count<=4'b1111;
+          else count<=count-4'b1;
+        end
+    end
+    end
+    else count<=count;
+  end
+endmodule
+
+//TESTBENCH
+
+interface tb_if();
+  reg clk;
+  reg rst;
+  reg mod;
+  reg en;
+  reg[3:0]count;
+endinterface
+
+module tb;
+  tb_if tif();
+  up_down_counter_mod_16 dut(.clk(tif.clk),.rst(tif.rst),.mod(tif.mod),.en(tif.en),.count(tif.count));
+  initial tif.clk=0;
+  always #2 tif.clk=~tif.clk;
+  initial begin
+    $monitor("t=%0d count=%0d",$time,tif.count);
+    @(posedge tif.clk) tif.en<=1;
+    @(posedge tif.clk) tif.mod<=1;
+    #2 tif.rst=1;
+    #4 tif.rst=0;
+    #60;
+    @(posedge tif.clk) tif.mod<=0;
+    #2 tif.rst=1;
+    #4 tif.rst=0;
+    #60;
+    $finish;
+  end
+  
+  initial begin
+    $dumpfile("dump.vcd");
+    $dumpvars(1);
+  end
+endmodule
+  
+
+      
+           
+            
+  
