@@ -1,0 +1,137 @@
+//Design module
+
+module ram_1KB #(parameter add_width=10,
+                 parameter data_width=32,
+                 parameter depth=256)
+  (
+    //reset and clock
+    
+    input clk,   
+    input rstn,
+    
+    //address
+    
+    input[add_width-1:0]addr,
+  
+    //write/read enable
+    
+    input we,
+    
+    //write/read control 
+   
+   input wvalid,
+   input arvalid,
+   
+    //write data
+    
+    input [data_width-1:0]wdata,
+   
+    //read data and response
+   
+    output reg [data_width-1:0]rdata,
+    output reg rvalid
+   
+  );
+  
+  reg[data_width-1:0]mem[depth-1:0];
+  
+  always@(posedge clk)begin
+    
+    //mem write
+    
+    if(we==1 && wvalid==1)begin
+      mem[addr]<=wdata;
+    end
+    
+    //mem read
+    
+    else if(we==0 && arvalid==1)begin
+      rdata<=mem[addr];
+      rvalid<=1;
+    end
+  end
+endmodule
+    
+  
+//Testbench
+interface tb_if#(parameter add_width=10,
+                 parameter data_width=32)
+  (input clk,rstn);
+  reg we;
+  reg wvalid;
+  reg arvalid;
+  reg [data_width-1:0]wdata;
+  reg [add_width-1:0]addr;
+  reg [data_width-1:0]rdata;
+  reg rvalid;
+endinterface
+  
+module tb;
+    logic clk;
+    logic rstn;
+    
+    tb_if tif(clk,rstn);
+    
+  ram_1KB dut(.clk(tif.clk),.rstn(tif.rstn),.we(tif.we),.wvalid(tif.wvalid),.arvalid(tif.arvalid),.wdata(tif.wdata),.addr(tif.addr),.rdata(tif.rdata),.rvalid(tif.rvalid));
+    
+  always #2 clk=~clk;
+  
+  initial clk=0;
+  
+  initial begin
+  
+  @(posedge clk) rstn<=0;
+  @(posedge clk) rstn<=1;
+    
+  end
+      
+  
+  initial begin
+    $monitor("Time=%0t Addr=%0d Data_in=%0d Data_out=%0d rvalid=%od",$time,tif.addr,tif.wdata,tif.rdata,tif.rvalid);
+  end 
+  
+    initial begin 
+     
+      @(posedge clk)begin
+      tif.we<=1;
+      tif.wvalid<=1;
+      tif.addr<=0;
+      end
+      
+      repeat(10)begin
+        @(posedge clk)begin
+        //tif.wdata<=$urandom_range(0,255);
+        tif.wdata<=$random%10;
+        tif.addr<=tif.addr+1;
+        end
+      end
+     
+      @(posedge clk)begin
+      tif.we<=0;
+      tif.arvalid<=1;
+      tif.addr<=0;
+      end
+      
+      repeat(10)begin
+        @(posedge clk) tif.addr<=tif.addr+1;
+      end
+      
+      #100;
+      $finish;
+    end
+  
+  initial begin
+    $dumpfile("dump.vcd");
+    $dumpvars();
+  end
+  
+endmodule
+      
+      
+     
+     
+    
+      
+    
+       
+   
